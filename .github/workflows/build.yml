@@ -1,7 +1,7 @@
 name: Build LineageOS 21 for Sweet
 
 on:
-  workflow_dispatch: # Eita dile tui nije button chepe build start korte parbi
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,9 +12,9 @@ jobs:
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 1024
-          swap-size-mb: 24576 # 24GB Swap toiri korbe
+          swap-size-mb: 8192 # Swap komiye 8GB korlam jate Hard disk faka thake
           remove-dotnet: 'true'
-          remove-android: 'true' # Android SDK muche space banabe
+          remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
@@ -34,9 +34,10 @@ jobs:
           cd ~/workspace
           git config --global user.name "Taushif"
           git config --global user.email "taushif@example.com"
-          repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs
           
-          # Sweet er jonno file add kora
+          # Shallow Sync (Depth 1) bebohar korlam storage bachanor jonno
+          repo init -u https://github.com/LineageOS/android.git -b lineage-21.0 --git-lfs --depth=1
+          
           mkdir -p .repo/local_manifests
           cat <<EOF > .repo/local_manifests/sweet.xml
           <?xml version="1.0" encoding="UTF-8"?>
@@ -48,14 +49,16 @@ jobs:
           </manifest>
           EOF
           
-          # Source Code Download Kora (Ekhane Github er superfast speed pabi!)
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+          
+          # Extra kachra muche hard disk faka kora
+          rm -rf .repo/project-objects
 
       - name: 🛠️ Build The ROM
         run: |
           PATH=~/bin:$PATH
           cd ~/workspace
-          export _JAVA_OPTIONS="-Xmx8g"
+          export _JAVA_OPTIONS="-Xmx4g"
           source build/envsetup.sh
           breakfast sweet
           m bacon -j$(nproc --all)
